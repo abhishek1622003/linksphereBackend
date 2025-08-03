@@ -293,6 +293,52 @@ app.get('/api/debug/check-schema', async (req, res) => {
         });
     }
 });
+// EMERGENCY FIX: Make first_name and last_name nullable
+app.get('/api/debug/fix-columns', async (req, res) => {
+    try {
+        console.log("🔧 EMERGENCY FIX: Making name columns nullable");
+        const { db } = await Promise.resolve().then(() => __importStar(require("./db")));
+        const { sql } = await Promise.resolve().then(() => __importStar(require("drizzle-orm")));
+        // Make first_name and last_name nullable
+        console.log("🔧 Making first_name nullable...");
+        await db.execute(sql.raw(`
+      ALTER TABLE users 
+      ALTER COLUMN first_name DROP NOT NULL
+    `));
+        console.log("🔧 Making last_name nullable...");
+        await db.execute(sql.raw(`
+      ALTER TABLE users 
+      ALTER COLUMN last_name DROP NOT NULL
+    `));
+        // Set default values for existing users with empty names
+        console.log("🔧 Setting default names for existing users...");
+        await db.execute(sql.raw(`
+      UPDATE users 
+      SET first_name = 'User', last_name = 'Name'
+      WHERE first_name = '' OR first_name IS NULL OR last_name = '' OR last_name IS NULL
+    `));
+        // Check the result
+        const updatedColumns = await db.execute(sql.raw(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND table_schema = 'public'
+      AND column_name IN ('first_name', 'last_name')
+      ORDER BY column_name
+    `));
+        console.log("✅ Columns fixed successfully!");
+        res.json({
+            message: "Emergency fix completed",
+            updatedColumns
+        });
+    }
+    catch (error) {
+        console.error("❌ EMERGENCY FIX ERROR:", error);
+        res.status(500).json({
+            error: error.message,
+            stack: error.stack
+        });
+    }
+});
 // Register API routes
 (0, routes_1.registerRoutes)(app);
 // Error handling middleware

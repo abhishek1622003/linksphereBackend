@@ -18,8 +18,8 @@ exports.sessions = (0, pg_core_1.pgTable)("sessions", {
 exports.users = (0, pg_core_1.pgTable)("users", {
     id: (0, pg_core_1.varchar)("id").primaryKey().default((0, drizzle_orm_1.sql) `gen_random_uuid()`),
     email: (0, pg_core_1.varchar)("email", { length: 255 }).notNull().unique(),
-    firstName: (0, pg_core_1.varchar)("first_name", { length: 255 }).notNull(),
-    lastName: (0, pg_core_1.varchar)("last_name", { length: 255 }).notNull(),
+    firstName: (0, pg_core_1.varchar)("first_name", { length: 255 }),
+    lastName: (0, pg_core_1.varchar)("last_name", { length: 255 }),
     profileImageUrl: (0, pg_core_1.varchar)("profile_image_url"),
     bio: (0, pg_core_1.text)("bio"),
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
