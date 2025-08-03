@@ -1,5 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import cors from "cors";
+import { sql } from "drizzle-orm";
 import { registerRoutes } from "./routes";
 
 const app = express();
@@ -46,8 +47,29 @@ app.get("/", (req, res) => {
 });
 
 // Health check endpoint for Render
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+app.get("/health", async (req, res) => {
+  try {
+    // Test database connection
+    const { db } = await import("./db");
+    if (!db) {
+      throw new Error("Database not initialized");
+    }
+    // Simple query to test connection
+    await db.execute(sql`SELECT 1`);
+    res.status(200).json({ 
+      status: "ok", 
+      timestamp: new Date().toISOString(),
+      database: "connected"
+    });
+  } catch (error) {
+    console.error("Health check failed:", error);
+    res.status(500).json({ 
+      status: "error", 
+      timestamp: new Date().toISOString(),
+      database: "disconnected",
+      error: error.message
+    });
+  }
 });
 
 // Register API routes
