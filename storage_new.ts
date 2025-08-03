@@ -6,24 +6,27 @@ import {
   type NewUser,
   type Post,
   type NewPost,
-  updateUserProfileSchema,
-  createPostSchema,
 } from "./schema";
 import { db } from "./db";
 import { eq, desc, and, count, sql } from "drizzle-orm";
-import type { z } from "zod";
 
 // Type definitions for API operations
 export interface UpsertUser {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
+  name: string;
   profileImageUrl?: string;
 }
 
-export type UpdateUserProfile = z.infer<typeof updateUserProfileSchema>;
-export type CreatePost = z.infer<typeof createPostSchema>;
+export interface UpdateUserProfile {
+  name?: string;
+  bio?: string;
+  profileImageUrl?: string;
+}
+
+export interface InsertPost {
+  content: string;
+}
 
 export interface PostWithUser extends Post {
   author: User | null;
@@ -42,7 +45,7 @@ export interface IStorage {
   updateUserProfile(id: string, profile: UpdateUserProfile): Promise<User>;
   
   // Post operations
-  createPost(userId: string, post: CreatePost): Promise<Post>;
+  createPost(userId: string, post: InsertPost): Promise<Post>;
   getPosts(): Promise<PostWithUser[]>;
   getUserPosts(userId: string): Promise<PostWithUser[]>;
   getPostById(id: number): Promise<PostWithUser | undefined>;
@@ -56,20 +59,11 @@ export interface IStorage {
 // Implementation
 class Storage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    if (!db) {
-      throw new Error("Database connection not initialized");
-    }
-    console.log("🔍 Storage.getUser - querying for user:", id);
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
-    console.log("🔍 Storage.getUser - query result:", result.length > 0 ? "found" : "not found");
     return result[0];
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
-    if (!db) {
-      throw new Error("Database connection not initialized");
-    }
-    console.log("🔍 Storage.upsertUser - starting with data:", userData);
     const existingUser = await this.getUser(userData.id);
     
     if (existingUser) {
@@ -78,31 +72,21 @@ class Storage implements IStorage {
         .update(users)
         .set({
           email: userData.email,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
+          name: userData.name,
           profileImageUrl: userData.profileImageUrl,
           updatedAt: new Date()
         })
         .where(eq(users.id, userData.id))
         .returning();
-      
-      if (!result[0]) {
-        throw new Error("Failed to update user");
-      }
       return result[0];
     } else {
       // Insert new user
       const result = await db.insert(users).values({
         id: userData.id,
         email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
+        name: userData.name,
         profileImageUrl: userData.profileImageUrl
       }).returning();
-      
-      if (!result[0]) {
-        throw new Error("Failed to create user");
-      }
       return result[0];
     }
   }
@@ -124,15 +108,12 @@ class Storage implements IStorage {
     return result[0];
   }
 
-  async createPost(userId: string, post: CreatePost): Promise<Post> {
+  async createPost(userId: string, post: InsertPost): Promise<Post> {
     const result = await db.insert(posts).values({
       content: post.content,
-      userId: userId
+      authorId: userId
     }).returning();
     
-    if (!result[0]) {
-      throw new Error("Failed to create post");
-    }
     return result[0];
   }
 
@@ -144,7 +125,7 @@ class Storage implements IStorage {
         likeCount: count(likes.id)
       })
       .from(posts)
-      .leftJoin(users, eq(posts.userId, users.id))
+      .leftJoin(users, eq(posts.authorId, users.id))
       .leftJoin(likes, eq(posts.id, likes.postId))
       .groupBy(posts.id, users.id)
       .orderBy(desc(posts.createdAt));
@@ -167,9 +148,9 @@ class Storage implements IStorage {
         likeCount: count(likes.id)
       })
       .from(posts)
-      .leftJoin(users, eq(posts.userId, users.id))
+      .leftJoin(users, eq(posts.authorId, users.id))
       .leftJoin(likes, eq(posts.id, likes.postId))
-      .where(eq(posts.userId, userId))
+      .where(eq(posts.authorId, userId))
       .groupBy(posts.id, users.id)
       .orderBy(desc(posts.createdAt));
 
@@ -191,7 +172,7 @@ class Storage implements IStorage {
         likeCount: count(likes.id)
       })
       .from(posts)
-      .leftJoin(users, eq(posts.userId, users.id))
+      .leftJoin(users, eq(posts.authorId, users.id))
       .leftJoin(likes, eq(posts.id, likes.postId))
       .where(eq(posts.id, id))
       .groupBy(posts.id, users.id)
