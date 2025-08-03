@@ -7,19 +7,10 @@ const drizzle_orm_1 = require("drizzle-orm");
 // Implementation
 class Storage {
     async getUser(id) {
-        if (!db_1.db) {
-            throw new Error("Database connection not initialized");
-        }
-        console.log("🔍 Storage.getUser - querying for user:", id);
         const result = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, id)).limit(1);
-        console.log("🔍 Storage.getUser - query result:", result.length > 0 ? "found" : "not found");
         return result[0];
     }
     async upsertUser(userData) {
-        if (!db_1.db) {
-            throw new Error("Database connection not initialized");
-        }
-        console.log("🔍 Storage.upsertUser - starting with data:", userData);
         const existingUser = await this.getUser(userData.id);
         if (existingUser) {
             // Update existing user
@@ -27,16 +18,12 @@ class Storage {
                 .update(schema_1.users)
                 .set({
                 email: userData.email,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
+                name: userData.name,
                 profileImageUrl: userData.profileImageUrl,
                 updatedAt: new Date()
             })
                 .where((0, drizzle_orm_1.eq)(schema_1.users.id, userData.id))
                 .returning();
-            if (!result[0]) {
-                throw new Error("Failed to update user");
-            }
             return result[0];
         }
         else {
@@ -44,13 +31,9 @@ class Storage {
             const result = await db_1.db.insert(schema_1.users).values({
                 id: userData.id,
                 email: userData.email,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
+                name: userData.name,
                 profileImageUrl: userData.profileImageUrl
             }).returning();
-            if (!result[0]) {
-                throw new Error("Failed to create user");
-            }
             return result[0];
         }
     }
@@ -71,11 +54,8 @@ class Storage {
     async createPost(userId, post) {
         const result = await db_1.db.insert(schema_1.posts).values({
             content: post.content,
-            userId: userId
+            authorId: userId
         }).returning();
-        if (!result[0]) {
-            throw new Error("Failed to create post");
-        }
         return result[0];
     }
     async getPosts() {
@@ -86,7 +66,7 @@ class Storage {
             likeCount: (0, drizzle_orm_1.count)(schema_1.likes.id)
         })
             .from(schema_1.posts)
-            .leftJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.posts.userId, schema_1.users.id))
+            .leftJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.posts.authorId, schema_1.users.id))
             .leftJoin(schema_1.likes, (0, drizzle_orm_1.eq)(schema_1.posts.id, schema_1.likes.postId))
             .groupBy(schema_1.posts.id, schema_1.users.id)
             .orderBy((0, drizzle_orm_1.desc)(schema_1.posts.createdAt));
@@ -107,9 +87,9 @@ class Storage {
             likeCount: (0, drizzle_orm_1.count)(schema_1.likes.id)
         })
             .from(schema_1.posts)
-            .leftJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.posts.userId, schema_1.users.id))
+            .leftJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.posts.authorId, schema_1.users.id))
             .leftJoin(schema_1.likes, (0, drizzle_orm_1.eq)(schema_1.posts.id, schema_1.likes.postId))
-            .where((0, drizzle_orm_1.eq)(schema_1.posts.userId, userId))
+            .where((0, drizzle_orm_1.eq)(schema_1.posts.authorId, userId))
             .groupBy(schema_1.posts.id, schema_1.users.id)
             .orderBy((0, drizzle_orm_1.desc)(schema_1.posts.createdAt));
         return result.map(row => ({
@@ -129,7 +109,7 @@ class Storage {
             likeCount: (0, drizzle_orm_1.count)(schema_1.likes.id)
         })
             .from(schema_1.posts)
-            .leftJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.posts.userId, schema_1.users.id))
+            .leftJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.posts.authorId, schema_1.users.id))
             .leftJoin(schema_1.likes, (0, drizzle_orm_1.eq)(schema_1.posts.id, schema_1.likes.postId))
             .where((0, drizzle_orm_1.eq)(schema_1.posts.id, id))
             .groupBy(schema_1.posts.id, schema_1.users.id)

@@ -43,7 +43,7 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get("/", (req, res) => {
-  res.json({ message: "LinkSphere API Server v4 - EMERGENCY FIX", status: "running", timestamp: new Date().toISOString() });
+  res.json({ message: "LinkSphere API Server v6 - FORCE REBUILD", status: "running", timestamp: new Date().toISOString() });
 });
 
 // REAL FIX: Add missing name column to existing users table
@@ -147,6 +147,38 @@ app.post("/debug/recreate-db", async (req, res) => {
       message: "Database recreation failed", 
       error: error.message,
       code: error.code 
+    });
+  }
+});
+
+// Debug endpoint to check database schema
+app.get("/debug/schema", async (req, res) => {
+  try {
+    console.log("🔍 Checking database schema...");
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    
+    // Check current table structure
+    const columns = await db.execute(sql.raw(`
+      SELECT column_name, data_type, is_nullable 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND table_schema = 'public'
+      ORDER BY ordinal_position
+    `));
+    
+    res.json({ 
+      message: "Database schema check", 
+      status: "success",
+      userTableColumns: columns,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error("❌ Failed to check schema:", error);
+    res.status(500).json({ 
+      message: "Failed to check schema", 
+      error: error.message,
+      stack: error.stack
     });
   }
 });

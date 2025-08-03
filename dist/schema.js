@@ -18,8 +18,9 @@ exports.sessions = (0, pg_core_1.pgTable)("sessions", {
 exports.users = (0, pg_core_1.pgTable)("users", {
     id: (0, pg_core_1.varchar)("id").primaryKey().default((0, drizzle_orm_1.sql) `gen_random_uuid()`),
     email: (0, pg_core_1.varchar)("email", { length: 255 }).notNull().unique(),
-    name: (0, pg_core_1.varchar)("name", { length: 255 }).notNull(),
-    profileImageUrl: (0, pg_core_1.text)("profile_image_url"),
+    firstName: (0, pg_core_1.varchar)("first_name", { length: 255 }).notNull(),
+    lastName: (0, pg_core_1.varchar)("last_name", { length: 255 }).notNull(),
+    profileImageUrl: (0, pg_core_1.varchar)("profile_image_url"),
     bio: (0, pg_core_1.text)("bio"),
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow(),
@@ -27,7 +28,7 @@ exports.users = (0, pg_core_1.pgTable)("users", {
 exports.posts = (0, pg_core_1.pgTable)("posts", {
     id: (0, pg_core_1.serial)("id").primaryKey(),
     content: (0, pg_core_1.text)("content").notNull(),
-    authorId: (0, pg_core_1.varchar)("author_id").notNull().references(() => exports.users.id, { onDelete: "cascade" }),
+    userId: (0, pg_core_1.varchar)("user_id").notNull().references(() => exports.users.id, { onDelete: "cascade" }),
     createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
     updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow(),
 });
@@ -61,7 +62,7 @@ exports.usersRelations = (0, drizzle_orm_2.relations)(exports.users, ({ many }) 
 }));
 exports.postsRelations = (0, drizzle_orm_2.relations)(exports.posts, ({ one, many }) => ({
     author: one(exports.users, {
-        fields: [exports.posts.authorId],
+        fields: [exports.posts.userId],
         references: [exports.users.id],
     }),
     likes: many(exports.likes),
@@ -106,7 +107,8 @@ exports.insertCommentSchema = (0, drizzle_zod_1.createInsertSchema)(exports.comm
 exports.insertLikeSchema = (0, drizzle_zod_1.createInsertSchema)(exports.likes);
 exports.insertFollowSchema = (0, drizzle_zod_1.createInsertSchema)(exports.follows);
 exports.updateUserProfileSchema = zod_1.z.object({
-    name: zod_1.z.string().min(1).max(255).optional(),
+    firstName: zod_1.z.string().min(1).max(255).optional(),
+    lastName: zod_1.z.string().min(1).max(255).optional(),
     bio: zod_1.z.string().max(1000).optional(),
     profileImageUrl: zod_1.z.string().url().optional(),
 });

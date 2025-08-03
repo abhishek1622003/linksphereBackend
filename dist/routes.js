@@ -10,22 +10,38 @@ function registerRoutes(app) {
     // Auth routes
     app.get('/api/auth/user', auth_1.verifyFirebaseToken, async (req, res) => {
         try {
+            console.log("🔍 /api/auth/user - Firebase user:", req.user);
             const userId = req.user.uid;
+            console.log("🔍 Looking up user in database:", userId);
             let user = await storage_1.storage.getUser(userId);
+            console.log("🔍 Database query result:", user ? "User found" : "User not found");
             if (!user) {
-                // Upsert user in database if not found
-                user = await storage_1.storage.upsertUser({
+                console.log("🔍 Creating new user with data:", {
                     id: userId,
                     email: req.user.email,
                     name: req.user.name || req.user.displayName || "",
                     profileImageUrl: req.user.picture || ""
                 });
+                // Upsert user in database if not found
+                const fullName = req.user.name || req.user.displayName || "";
+                const nameParts = fullName.split(" ");
+                const firstName = nameParts[0] || "User";
+                const lastName = nameParts.slice(1).join(" ") || "";
+                user = await storage_1.storage.upsertUser({
+                    id: userId,
+                    email: req.user.email,
+                    firstName: firstName,
+                    lastName: lastName,
+                    profileImageUrl: req.user.picture || ""
+                });
+                console.log("✅ User created successfully:", user);
             }
             res.json(user);
         }
         catch (error) {
-            console.error("Error fetching user:", error);
-            res.status(500).json({ message: "Failed to fetch user" });
+            console.error("❌ Error in /api/auth/user:", error);
+            console.error("❌ Error stack:", error.stack);
+            res.status(500).json({ message: "Failed to fetch user", error: error.message });
         }
     });
     // User profile routes
