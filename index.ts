@@ -89,8 +89,28 @@ app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
 });
 
-// Start server
+// Start server with database initialization
 const port = parseInt(process.env.PORT || '5000', 10);
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+
+async function startServer() {
+  try {
+    // Initialize database first
+    const { initializeDatabase } = await import("./dbInit");
+    await initializeDatabase();
+    
+    app.listen(port, () => {
+      console.log(`✅ Server running on port ${port}`);
+      console.log(`🌐 Health check: http://localhost:${port}/health`);
+    });
+  } catch (error) {
+    console.error("❌ Failed to start server:", error);
+    console.log("⚠️ Starting server anyway (database issues may persist)");
+    
+    app.listen(port, () => {
+      console.log(`⚠️ Server running on port ${port} (with database issues)`);
+      console.log(`🌐 Health check: http://localhost:${port}/health`);
+    });
+  }
+}
+
+startServer();
