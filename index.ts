@@ -43,18 +43,28 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get("/", (req, res) => {
-  res.json({ message: "LinkSphere API Server v3 - FORCE REBUILD", status: "running" });
+  res.json({ message: "LinkSphere API Server v4 - EMERGENCY FIX", status: "running", timestamp: new Date().toISOString() });
 });
 
-// EMERGENCY: Create database tables endpoint
-app.get("/emergency/create-tables", async (req, res) => {
+// EMERGENCY FIX: Direct database table creation
+app.get("/fix-database-now", async (req, res) => {
   try {
-    console.log("🚨 EMERGENCY: Creating database tables...");
+    console.log("🚨 EMERGENCY FIX: Creating users table with correct schema...");
     const { db } = await import("./db");
     const { sql } = await import("drizzle-orm");
     
+    // First, let's see what tables exist
+    const tables = await db.execute(sql.raw(`
+      SELECT table_name FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `));
+    console.log("📋 Existing tables:", tables);
+    
     // Drop and recreate users table with correct schema
+    console.log("🗑️ Dropping users table...");
     await db.execute(sql.raw('DROP TABLE IF EXISTS users CASCADE'));
+    
+    console.log("🔧 Creating users table with correct schema...");
     await db.execute(sql.raw(`
       CREATE TABLE users (
           id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -67,13 +77,27 @@ app.get("/emergency/create-tables", async (req, res) => {
       )
     `));
     
-    console.log("✅ Users table created successfully");
-    res.json({ message: "Emergency table creation completed", status: "success" });
+    // Verify the table was created correctly
+    console.log("🔍 Verifying table schema...");
+    const schema = await db.execute(sql.raw(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'users'
+    `));
+    
+    console.log("✅ Users table created successfully with schema:", schema);
+    res.json({ 
+      message: "Database fix completed successfully", 
+      status: "success",
+      schema: schema,
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    console.error("❌ Emergency table creation failed:", error);
+    console.error("❌ Database fix failed:", error);
     res.status(500).json({ 
-      message: "Emergency table creation failed", 
-      error: error.message 
+      message: "Database fix failed", 
+      error: error.message,
+      stack: error.stack
     });
   }
 });
