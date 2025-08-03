@@ -1,17 +1,20 @@
-import { storage } from "./storage";
-import { verifyFirebaseToken } from "./middleware/auth";
-import { createPostSchema, updateUserProfileSchema } from "./schema";
-import { fromError } from "zod-validation-error";
-export function registerRoutes(app) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.registerRoutes = registerRoutes;
+const storage_1 = require("./storage");
+const auth_1 = require("./middleware/auth");
+const schema_1 = require("./schema");
+const zod_validation_error_1 = require("zod-validation-error");
+function registerRoutes(app) {
     // Firebase Auth middleware (no setup needed)
     // Auth routes
-    app.get('/api/auth/user', verifyFirebaseToken, async (req, res) => {
+    app.get('/api/auth/user', auth_1.verifyFirebaseToken, async (req, res) => {
         try {
             const userId = req.user.uid;
-            let user = await storage.getUser(userId);
+            let user = await storage_1.storage.getUser(userId);
             if (!user) {
                 // Upsert user in database if not found
-                user = await storage.upsertUser({
+                user = await storage_1.storage.upsertUser({
                     id: userId,
                     email: req.user.email,
                     name: req.user.name || req.user.displayName || "",
@@ -26,19 +29,19 @@ export function registerRoutes(app) {
         }
     });
     // User profile routes
-    app.put('/api/profile', verifyFirebaseToken, async (req, res) => {
+    app.put('/api/profile', auth_1.verifyFirebaseToken, async (req, res) => {
         try {
             const userId = req.user.uid;
-            const validation = updateUserProfileSchema.safeParse(req.body);
+            const validation = schema_1.updateUserProfileSchema.safeParse(req.body);
             if (!validation.success) {
-                const validationError = fromError(validation.error);
+                const validationError = (0, zod_validation_error_1.fromError)(validation.error);
                 res.status(400).json({
                     message: "Validation failed",
                     details: validationError.toString()
                 });
                 return;
             }
-            const updatedUser = await storage.updateUserProfile(userId, validation.data);
+            const updatedUser = await storage_1.storage.updateUserProfile(userId, validation.data);
             res.json(updatedUser);
         }
         catch (error) {
@@ -48,7 +51,7 @@ export function registerRoutes(app) {
     });
     app.get('/api/users/:id', async (req, res) => {
         try {
-            const user = await storage.getUser(req.params.id);
+            const user = await storage_1.storage.getUser(req.params.id);
             if (!user) {
                 res.status(404).json({ message: "User not found" });
                 return;
@@ -61,18 +64,18 @@ export function registerRoutes(app) {
         }
     });
     // Post routes
-    app.post('/api/posts', verifyFirebaseToken, async (req, res) => {
+    app.post('/api/posts', auth_1.verifyFirebaseToken, async (req, res) => {
         try {
             const userId = req.user.uid;
-            const validation = createPostSchema.safeParse(req.body);
+            const validation = schema_1.createPostSchema.safeParse(req.body);
             if (!validation.success) {
-                const validationError = fromError(validation.error);
+                const validationError = (0, zod_validation_error_1.fromError)(validation.error);
                 return res.status(400).json({
                     message: "Validation failed",
                     details: validationError.toString()
                 });
             }
-            const post = await storage.createPost(userId, validation.data);
+            const post = await storage_1.storage.createPost(userId, validation.data);
             return res.status(201).json(post);
         }
         catch (error) {
@@ -82,7 +85,7 @@ export function registerRoutes(app) {
     });
     app.get('/api/posts', async (req, res) => {
         try {
-            const posts = await storage.getPosts();
+            const posts = await storage_1.storage.getPosts();
             res.json(posts);
         }
         catch (error) {
@@ -92,7 +95,7 @@ export function registerRoutes(app) {
     });
     app.get('/api/posts/user/:userId', async (req, res) => {
         try {
-            const posts = await storage.getUserPosts(req.params.userId);
+            const posts = await storage_1.storage.getUserPosts(req.params.userId);
             res.json(posts);
         }
         catch (error) {
@@ -101,20 +104,20 @@ export function registerRoutes(app) {
         }
     });
     // Like routes
-    app.post('/api/posts/:id/like', verifyFirebaseToken, async (req, res) => {
+    app.post('/api/posts/:id/like', auth_1.verifyFirebaseToken, async (req, res) => {
         try {
             const userId = req.user.uid;
             const postId = parseInt(req.params.id);
             if (isNaN(postId)) {
                 return res.status(400).json({ message: "Invalid post ID" });
             }
-            const isLiked = await storage.isPostLiked(userId, postId);
+            const isLiked = await storage_1.storage.isPostLiked(userId, postId);
             if (isLiked) {
-                await storage.unlikePost(userId, postId);
+                await storage_1.storage.unlikePost(userId, postId);
                 return res.json({ liked: false });
             }
             else {
-                await storage.likePost(userId, postId);
+                await storage_1.storage.likePost(userId, postId);
                 return res.json({ liked: true });
             }
         }

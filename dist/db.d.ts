@@ -1,3 +1,4 @@
 import { Pool } from '@neondatabase/serverless';
-export declare const pool: Pool;
-export declare const db: any;
+declare let pool: Pool | null;
+declare let db: any;
+export { pool, db };

@@ -8,6 +8,11 @@ export async function verifyFirebaseToken(req: Request, res: Response, next: Nex
     return;
   }
 
+  if (!admin) {
+    res.status(500).json({ message: "Firebase Admin not initialized" });
+    return;
+  }
+
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     (req as any).user = decodedToken;

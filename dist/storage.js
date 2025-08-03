@@ -1,25 +1,28 @@
-import { users, posts, likes, } from "./schema";
-import { db } from "./db";
-import { eq, desc, and, count } from "drizzle-orm";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.storage = void 0;
+const schema_1 = require("./schema");
+const db_1 = require("./db");
+const drizzle_orm_1 = require("drizzle-orm");
 // Implementation
 class Storage {
     async getUser(id) {
-        const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+        const result = await db_1.db.select().from(schema_1.users).where((0, drizzle_orm_1.eq)(schema_1.users.id, id)).limit(1);
         return result[0];
     }
     async upsertUser(userData) {
         const existingUser = await this.getUser(userData.id);
         if (existingUser) {
             // Update existing user
-            const result = await db
-                .update(users)
+            const result = await db_1.db
+                .update(schema_1.users)
                 .set({
                 email: userData.email,
                 name: userData.name,
                 profileImageUrl: userData.profileImageUrl,
                 updatedAt: new Date()
             })
-                .where(eq(users.id, userData.id))
+                .where((0, drizzle_orm_1.eq)(schema_1.users.id, userData.id))
                 .returning();
             if (!result[0]) {
                 throw new Error("Failed to update user");
@@ -28,7 +31,7 @@ class Storage {
         }
         else {
             // Insert new user
-            const result = await db.insert(users).values({
+            const result = await db_1.db.insert(schema_1.users).values({
                 id: userData.id,
                 email: userData.email,
                 name: userData.name,
@@ -41,13 +44,13 @@ class Storage {
         }
     }
     async updateUserProfile(id, profile) {
-        const result = await db
-            .update(users)
+        const result = await db_1.db
+            .update(schema_1.users)
             .set({
             ...profile,
             updatedAt: new Date()
         })
-            .where(eq(users.id, id))
+            .where((0, drizzle_orm_1.eq)(schema_1.users.id, id))
             .returning();
         if (!result[0]) {
             throw new Error("User not found");
@@ -55,7 +58,7 @@ class Storage {
         return result[0];
     }
     async createPost(userId, post) {
-        const result = await db.insert(posts).values({
+        const result = await db_1.db.insert(schema_1.posts).values({
             content: post.content,
             authorId: userId
         }).returning();
@@ -65,17 +68,17 @@ class Storage {
         return result[0];
     }
     async getPosts() {
-        const result = await db
+        const result = await db_1.db
             .select({
-            post: posts,
-            author: users,
-            likeCount: count(likes.id)
+            post: schema_1.posts,
+            author: schema_1.users,
+            likeCount: (0, drizzle_orm_1.count)(schema_1.likes.id)
         })
-            .from(posts)
-            .leftJoin(users, eq(posts.authorId, users.id))
-            .leftJoin(likes, eq(posts.id, likes.postId))
-            .groupBy(posts.id, users.id)
-            .orderBy(desc(posts.createdAt));
+            .from(schema_1.posts)
+            .leftJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.posts.authorId, schema_1.users.id))
+            .leftJoin(schema_1.likes, (0, drizzle_orm_1.eq)(schema_1.posts.id, schema_1.likes.postId))
+            .groupBy(schema_1.posts.id, schema_1.users.id)
+            .orderBy((0, drizzle_orm_1.desc)(schema_1.posts.createdAt));
         return result.map(row => ({
             ...row.post,
             author: row.author,
@@ -86,18 +89,18 @@ class Storage {
         }));
     }
     async getUserPosts(userId) {
-        const result = await db
+        const result = await db_1.db
             .select({
-            post: posts,
-            author: users,
-            likeCount: count(likes.id)
+            post: schema_1.posts,
+            author: schema_1.users,
+            likeCount: (0, drizzle_orm_1.count)(schema_1.likes.id)
         })
-            .from(posts)
-            .leftJoin(users, eq(posts.authorId, users.id))
-            .leftJoin(likes, eq(posts.id, likes.postId))
-            .where(eq(posts.authorId, userId))
-            .groupBy(posts.id, users.id)
-            .orderBy(desc(posts.createdAt));
+            .from(schema_1.posts)
+            .leftJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.posts.authorId, schema_1.users.id))
+            .leftJoin(schema_1.likes, (0, drizzle_orm_1.eq)(schema_1.posts.id, schema_1.likes.postId))
+            .where((0, drizzle_orm_1.eq)(schema_1.posts.authorId, userId))
+            .groupBy(schema_1.posts.id, schema_1.users.id)
+            .orderBy((0, drizzle_orm_1.desc)(schema_1.posts.createdAt));
         return result.map(row => ({
             ...row.post,
             author: row.author,
@@ -108,17 +111,17 @@ class Storage {
         }));
     }
     async getPostById(id) {
-        const result = await db
+        const result = await db_1.db
             .select({
-            post: posts,
-            author: users,
-            likeCount: count(likes.id)
+            post: schema_1.posts,
+            author: schema_1.users,
+            likeCount: (0, drizzle_orm_1.count)(schema_1.likes.id)
         })
-            .from(posts)
-            .leftJoin(users, eq(posts.authorId, users.id))
-            .leftJoin(likes, eq(posts.id, likes.postId))
-            .where(eq(posts.id, id))
-            .groupBy(posts.id, users.id)
+            .from(schema_1.posts)
+            .leftJoin(schema_1.users, (0, drizzle_orm_1.eq)(schema_1.posts.authorId, schema_1.users.id))
+            .leftJoin(schema_1.likes, (0, drizzle_orm_1.eq)(schema_1.posts.id, schema_1.likes.postId))
+            .where((0, drizzle_orm_1.eq)(schema_1.posts.id, id))
+            .groupBy(schema_1.posts.id, schema_1.users.id)
             .limit(1);
         if (!result[0])
             return undefined;
@@ -134,30 +137,30 @@ class Storage {
     }
     async likePost(userId, postId) {
         // Check if already liked
-        const existingLike = await db
+        const existingLike = await db_1.db
             .select()
-            .from(likes)
-            .where(and(eq(likes.userId, userId), eq(likes.postId, postId)))
+            .from(schema_1.likes)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.likes.userId, userId), (0, drizzle_orm_1.eq)(schema_1.likes.postId, postId)))
             .limit(1);
         if (existingLike.length === 0) {
-            await db.insert(likes).values({
+            await db_1.db.insert(schema_1.likes).values({
                 userId,
                 postId
             });
         }
     }
     async unlikePost(userId, postId) {
-        await db
-            .delete(likes)
-            .where(and(eq(likes.userId, userId), eq(likes.postId, postId)));
+        await db_1.db
+            .delete(schema_1.likes)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.likes.userId, userId), (0, drizzle_orm_1.eq)(schema_1.likes.postId, postId)));
     }
     async isPostLiked(userId, postId) {
-        const result = await db
+        const result = await db_1.db
             .select()
-            .from(likes)
-            .where(and(eq(likes.userId, userId), eq(likes.postId, postId)))
+            .from(schema_1.likes)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.likes.userId, userId), (0, drizzle_orm_1.eq)(schema_1.likes.postId, postId)))
             .limit(1);
         return result.length > 0;
     }
 }
-export const storage = new Storage();
+exports.storage = new Storage();

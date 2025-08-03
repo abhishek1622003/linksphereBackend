@@ -1,116 +1,119 @@
-import { sql } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, timestamp, varchar, serial, } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createCommentSchema = exports.createPostSchema = exports.updateUserProfileSchema = exports.insertFollowSchema = exports.insertLikeSchema = exports.insertCommentSchema = exports.insertPostSchema = exports.insertUserSchema = exports.followsRelations = exports.commentsRelations = exports.likesRelations = exports.postsRelations = exports.usersRelations = exports.follows = exports.comments = exports.likes = exports.posts = exports.users = exports.sessions = void 0;
+const drizzle_orm_1 = require("drizzle-orm");
+const pg_core_1 = require("drizzle-orm/pg-core");
+const drizzle_orm_2 = require("drizzle-orm");
+const drizzle_zod_1 = require("drizzle-zod");
+const zod_1 = require("zod");
 // Session storage table.
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
-export const sessions = pgTable("sessions", {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-}, (table) => [index("IDX_session_expire").on(table.expire)]);
+exports.sessions = (0, pg_core_1.pgTable)("sessions", {
+    sid: (0, pg_core_1.varchar)("sid").primaryKey(),
+    sess: (0, pg_core_1.jsonb)("sess").notNull(),
+    expire: (0, pg_core_1.timestamp)("expire").notNull(),
+}, (table) => [(0, pg_core_1.index)("IDX_session_expire").on(table.expire)]);
 // User storage table.
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
-export const users = pgTable("users", {
-    id: varchar("id").primaryKey().default(sql `gen_random_uuid()`),
-    email: varchar("email", { length: 255 }).notNull().unique(),
-    name: varchar("name", { length: 255 }).notNull(),
-    profileImageUrl: text("profile_image_url"),
-    bio: text("bio"),
-    createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
+exports.users = (0, pg_core_1.pgTable)("users", {
+    id: (0, pg_core_1.varchar)("id").primaryKey().default((0, drizzle_orm_1.sql) `gen_random_uuid()`),
+    email: (0, pg_core_1.varchar)("email", { length: 255 }).notNull().unique(),
+    name: (0, pg_core_1.varchar)("name", { length: 255 }).notNull(),
+    profileImageUrl: (0, pg_core_1.text)("profile_image_url"),
+    bio: (0, pg_core_1.text)("bio"),
+    createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
+    updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow(),
 });
-export const posts = pgTable("posts", {
-    id: serial("id").primaryKey(),
-    content: text("content").notNull(),
-    authorId: varchar("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
+exports.posts = (0, pg_core_1.pgTable)("posts", {
+    id: (0, pg_core_1.serial)("id").primaryKey(),
+    content: (0, pg_core_1.text)("content").notNull(),
+    authorId: (0, pg_core_1.varchar)("author_id").notNull().references(() => exports.users.id, { onDelete: "cascade" }),
+    createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
+    updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow(),
 });
-export const likes = pgTable("likes", {
-    id: serial("id").primaryKey(),
-    postId: serial("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
-    userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow(),
+exports.likes = (0, pg_core_1.pgTable)("likes", {
+    id: (0, pg_core_1.serial)("id").primaryKey(),
+    postId: (0, pg_core_1.serial)("post_id").notNull().references(() => exports.posts.id, { onDelete: "cascade" }),
+    userId: (0, pg_core_1.varchar)("user_id").notNull().references(() => exports.users.id, { onDelete: "cascade" }),
+    createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
 });
-export const comments = pgTable("comments", {
-    id: serial("id").primaryKey(),
-    content: text("content").notNull(),
-    postId: serial("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
-    authorId: varchar("author_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow(),
-    updatedAt: timestamp("updated_at").defaultNow(),
+exports.comments = (0, pg_core_1.pgTable)("comments", {
+    id: (0, pg_core_1.serial)("id").primaryKey(),
+    content: (0, pg_core_1.text)("content").notNull(),
+    postId: (0, pg_core_1.serial)("post_id").notNull().references(() => exports.posts.id, { onDelete: "cascade" }),
+    authorId: (0, pg_core_1.varchar)("author_id").notNull().references(() => exports.users.id, { onDelete: "cascade" }),
+    createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
+    updatedAt: (0, pg_core_1.timestamp)("updated_at").defaultNow(),
 });
-export const follows = pgTable("follows", {
-    id: serial("id").primaryKey(),
-    followerId: varchar("follower_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    followingId: varchar("following_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").defaultNow(),
+exports.follows = (0, pg_core_1.pgTable)("follows", {
+    id: (0, pg_core_1.serial)("id").primaryKey(),
+    followerId: (0, pg_core_1.varchar)("follower_id").notNull().references(() => exports.users.id, { onDelete: "cascade" }),
+    followingId: (0, pg_core_1.varchar)("following_id").notNull().references(() => exports.users.id, { onDelete: "cascade" }),
+    createdAt: (0, pg_core_1.timestamp)("created_at").defaultNow(),
 });
 // Relations
-export const usersRelations = relations(users, ({ many }) => ({
-    posts: many(posts),
-    likes: many(likes),
-    comments: many(comments),
-    followers: many(follows, { relationName: "following" }),
-    following: many(follows, { relationName: "follower" }),
+exports.usersRelations = (0, drizzle_orm_2.relations)(exports.users, ({ many }) => ({
+    posts: many(exports.posts),
+    likes: many(exports.likes),
+    comments: many(exports.comments),
+    followers: many(exports.follows, { relationName: "following" }),
+    following: many(exports.follows, { relationName: "follower" }),
 }));
-export const postsRelations = relations(posts, ({ one, many }) => ({
-    author: one(users, {
-        fields: [posts.authorId],
-        references: [users.id],
+exports.postsRelations = (0, drizzle_orm_2.relations)(exports.posts, ({ one, many }) => ({
+    author: one(exports.users, {
+        fields: [exports.posts.authorId],
+        references: [exports.users.id],
     }),
-    likes: many(likes),
-    comments: many(comments),
+    likes: many(exports.likes),
+    comments: many(exports.comments),
 }));
-export const likesRelations = relations(likes, ({ one }) => ({
-    post: one(posts, {
-        fields: [likes.postId],
-        references: [posts.id],
+exports.likesRelations = (0, drizzle_orm_2.relations)(exports.likes, ({ one }) => ({
+    post: one(exports.posts, {
+        fields: [exports.likes.postId],
+        references: [exports.posts.id],
     }),
-    user: one(users, {
-        fields: [likes.userId],
-        references: [users.id],
-    }),
-}));
-export const commentsRelations = relations(comments, ({ one }) => ({
-    post: one(posts, {
-        fields: [comments.postId],
-        references: [posts.id],
-    }),
-    author: one(users, {
-        fields: [comments.authorId],
-        references: [users.id],
+    user: one(exports.users, {
+        fields: [exports.likes.userId],
+        references: [exports.users.id],
     }),
 }));
-export const followsRelations = relations(follows, ({ one }) => ({
-    follower: one(users, {
-        fields: [follows.followerId],
-        references: [users.id],
+exports.commentsRelations = (0, drizzle_orm_2.relations)(exports.comments, ({ one }) => ({
+    post: one(exports.posts, {
+        fields: [exports.comments.postId],
+        references: [exports.posts.id],
+    }),
+    author: one(exports.users, {
+        fields: [exports.comments.authorId],
+        references: [exports.users.id],
+    }),
+}));
+exports.followsRelations = (0, drizzle_orm_2.relations)(exports.follows, ({ one }) => ({
+    follower: one(exports.users, {
+        fields: [exports.follows.followerId],
+        references: [exports.users.id],
         relationName: "follower",
     }),
-    following: one(users, {
-        fields: [follows.followingId],
-        references: [users.id],
+    following: one(exports.users, {
+        fields: [exports.follows.followingId],
+        references: [exports.users.id],
         relationName: "following",
     }),
 }));
 // Zod schemas for validation
-export const insertUserSchema = createInsertSchema(users);
-export const insertPostSchema = createInsertSchema(posts);
-export const insertCommentSchema = createInsertSchema(comments);
-export const insertLikeSchema = createInsertSchema(likes);
-export const insertFollowSchema = createInsertSchema(follows);
-export const updateUserProfileSchema = z.object({
-    name: z.string().min(1).max(255).optional(),
-    bio: z.string().max(1000).optional(),
-    profileImageUrl: z.string().url().optional(),
+exports.insertUserSchema = (0, drizzle_zod_1.createInsertSchema)(exports.users);
+exports.insertPostSchema = (0, drizzle_zod_1.createInsertSchema)(exports.posts);
+exports.insertCommentSchema = (0, drizzle_zod_1.createInsertSchema)(exports.comments);
+exports.insertLikeSchema = (0, drizzle_zod_1.createInsertSchema)(exports.likes);
+exports.insertFollowSchema = (0, drizzle_zod_1.createInsertSchema)(exports.follows);
+exports.updateUserProfileSchema = zod_1.z.object({
+    name: zod_1.z.string().min(1).max(255).optional(),
+    bio: zod_1.z.string().max(1000).optional(),
+    profileImageUrl: zod_1.z.string().url().optional(),
 });
-export const createPostSchema = z.object({
-    content: z.string().min(1).max(2000),
+exports.createPostSchema = zod_1.z.object({
+    content: zod_1.z.string().min(1).max(2000),
 });
-export const createCommentSchema = z.object({
-    content: z.string().min(1).max(1000),
-    postId: z.number().int().positive(),
+exports.createCommentSchema = zod_1.z.object({
+    content: zod_1.z.string().min(1).max(1000),
+    postId: zod_1.z.number().int().positive(),
 });

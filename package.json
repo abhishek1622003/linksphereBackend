@@ -1,7 +1,6 @@
 {
   "name": "linksphere-server",
   "version": "1.0.0",
-  "type": "module",
   "description": "LinkSphere Server API",
   "main": "dist/index.js",
   "scripts": {
