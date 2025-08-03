@@ -23,8 +23,8 @@ export async function initializeDatabase() {
     
     // Test the schema after recreation
     console.log("🧪 Testing schema after recreation...");
-    await db.execute(sql`SELECT id, email, name FROM users LIMIT 1`);
-    console.log("✅ Database initialized with correct schema - name column exists!");
+    await db.execute(sql`SELECT id, email, first_name, last_name FROM users LIMIT 1`);
+    console.log("✅ Database initialized with correct schema - firstName/lastName columns exist!");
     
     // Log success prominently
     console.log("🎉 DATABASE INITIALIZATION COMPLETED SUCCESSFULLY!");
@@ -90,8 +90,9 @@ async function createTablesManually() {
       CREATE TABLE users (
           id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
           email VARCHAR(255) NOT NULL UNIQUE,
-          name VARCHAR(255) NOT NULL,
-          profile_image_url TEXT,
+          first_name VARCHAR(255) NOT NULL,
+          last_name VARCHAR(255) NOT NULL,
+          profile_image_url VARCHAR,
           bio TEXT,
           created_at TIMESTAMP DEFAULT NOW(),
           updated_at TIMESTAMP DEFAULT NOW()
