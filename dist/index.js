@@ -42,7 +42,12 @@ const drizzle_orm_1 = require("drizzle-orm");
 const routes_1 = require("./routes");
 const app = (0, express_1.default)();
 // Middleware
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: ["https://linkspherefrontend.vercel.app", "http://localhost:5173", "http://localhost:3000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
 // Logging middleware

@@ -6,7 +6,12 @@ import { registerRoutes } from "./routes";
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ["https://linkspherefrontend.vercel.app", "http://localhost:5173", "http://localhost:3000"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
