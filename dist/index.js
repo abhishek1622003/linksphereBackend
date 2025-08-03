@@ -41,10 +41,10 @@ const cors_1 = __importDefault(require("cors"));
 const drizzle_orm_1 = require("drizzle-orm");
 const routes_1 = require("./routes");
 const app = (0, express_1.default)();
-// Middleware
+// Middleware - Flexible CORS for deployment debugging
 app.use((0, cors_1.default)({
-    origin: ["https://linkspherefrontend.vercel.app", "http://localhost:5173", "http://localhost:3000"],
-    credentials: true,
+    origin: true, // Allow all origins temporarily for debugging
+    credentials: false, // Disable credentials to avoid CORS conflicts
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }));

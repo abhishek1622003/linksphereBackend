@@ -5,10 +5,10 @@ import { registerRoutes } from "./routes";
 
 const app = express();
 
-// Middleware
+// Middleware - Flexible CORS for deployment debugging
 app.use(cors({
-  origin: ["https://linkspherefrontend.vercel.app", "http://localhost:5173", "http://localhost:3000"],
-  credentials: true,
+  origin: true,  // Allow all origins temporarily for debugging
+  credentials: false,  // Disable credentials to avoid CORS conflicts
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
