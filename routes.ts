@@ -50,10 +50,15 @@ export function registerRoutes(app: Express): void {
   // User profile routes
   app.put('/api/profile', verifyFirebaseToken, async (req: any, res): Promise<void> => {
     try {
+      console.log("🔍 PUT /api/profile - Request received");
+      console.log("🔍 Request body:", req.body);
+      console.log("🔍 User ID:", req.user.uid);
+      
       const userId = req.user.uid;
       const validation = updateUserProfileSchema.safeParse(req.body);
       
       if (!validation.success) {
+        console.log("❌ Profile validation failed:", validation.error);
         const validationError = fromError(validation.error);
         res.status(400).json({ 
           message: "Validation failed", 
@@ -62,10 +67,12 @@ export function registerRoutes(app: Express): void {
         return;
       }
 
+      console.log("✅ Profile validation successful:", validation.data);
       const updatedUser = await storage.updateUserProfile(userId, validation.data);
+      console.log("✅ Profile updated successfully:", updatedUser);
       res.json(updatedUser);
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error("❌ Error updating profile:", error);
       res.status(500).json({ message: "Failed to update profile" });
     }
   });
@@ -87,10 +94,15 @@ export function registerRoutes(app: Express): void {
   // Post routes
   app.post('/api/posts', verifyFirebaseToken, async (req: any, res) => {
     try {
+      console.log("🔍 POST /api/posts - Request received");
+      console.log("🔍 Request body:", req.body);
+      console.log("🔍 User ID:", req.user.uid);
+      
       const userId = req.user.uid;
       const validation = createPostSchema.safeParse(req.body);
       
       if (!validation.success) {
+        console.log("❌ Validation failed:", validation.error);
         const validationError = fromError(validation.error);
         return res.status(400).json({ 
           message: "Validation failed", 
@@ -98,10 +110,12 @@ export function registerRoutes(app: Express): void {
         });
       }
 
+      console.log("✅ Validation successful:", validation.data);
       const post = await storage.createPost(userId, validation.data);
+      console.log("✅ Post created successfully:", post);
       return res.status(201).json(post);
     } catch (error) {
-      console.error("Error creating post:", error);
+      console.error("❌ Error creating post:", error);
       return res.status(500).json({ message: "Failed to create post" });
     }
   });
