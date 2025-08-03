@@ -17,7 +17,8 @@ import type { z } from "zod";
 export interface UpsertUser {
   id: string;
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   profileImageUrl?: string;
 }
 
@@ -77,7 +78,8 @@ class Storage implements IStorage {
         .update(users)
         .set({
           email: userData.email,
-          name: userData.name,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
           profileImageUrl: userData.profileImageUrl,
           updatedAt: new Date()
         })
@@ -93,7 +95,8 @@ class Storage implements IStorage {
       const result = await db.insert(users).values({
         id: userData.id,
         email: userData.email,
-        name: userData.name,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
         profileImageUrl: userData.profileImageUrl
       }).returning();
       

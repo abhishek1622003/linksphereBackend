@@ -29,7 +29,8 @@ export const sessions = pgTable(
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   email: varchar("email", { length: 255 }).notNull().unique(),
-  name: varchar("name", { length: 255 }).notNull(),
+  firstName: varchar("first_name", { length: 255 }).notNull(),
+  lastName: varchar("last_name", { length: 255 }).notNull(),
   profileImageUrl: text("profile_image_url"),
   bio: text("bio"),
   createdAt: timestamp("created_at").defaultNow(),
@@ -128,7 +129,8 @@ export const insertLikeSchema = createInsertSchema(likes);
 export const insertFollowSchema = createInsertSchema(follows);
 
 export const updateUserProfileSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
+  firstName: z.string().min(1).max(255).optional(),
+  lastName: z.string().min(1).max(255).optional(),
   bio: z.string().max(1000).optional(),
   profileImageUrl: z.string().url().optional(),
 });

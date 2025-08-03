@@ -25,10 +25,16 @@ export function registerRoutes(app: Express): void {
           profileImageUrl: req.user.picture || ""
         });
         // Upsert user in database if not found
+        const fullName = req.user.name || req.user.displayName || "";
+        const nameParts = fullName.split(" ");
+        const firstName = nameParts[0] || "User";
+        const lastName = nameParts.slice(1).join(" ") || "";
+        
         user = await storage.upsertUser({
           id: userId,
           email: req.user.email,
-          name: req.user.name || req.user.displayName || "",
+          firstName: firstName,
+          lastName: lastName,
           profileImageUrl: req.user.picture || ""
         });
         console.log("✅ User created successfully:", user);

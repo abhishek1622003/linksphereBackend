@@ -46,56 +46,62 @@ app.get("/", (req, res) => {
   res.json({ message: "LinkSphere API Server v4 - EMERGENCY FIX", status: "running", timestamp: new Date().toISOString() });
 });
 
-// EMERGENCY FIX: Direct database table creation
-app.get("/fix-database-now", async (req, res) => {
+// REAL FIX: Add missing name column to existing users table
+app.get("/add-name-column", async (req, res) => {
   try {
-    console.log("🚨 EMERGENCY FIX: Creating users table with correct schema...");
+    console.log("� Adding missing 'name' column to users table...");
     const { db } = await import("./db");
     const { sql } = await import("drizzle-orm");
     
-    // First, let's see what tables exist
-    const tables = await db.execute(sql.raw(`
-      SELECT table_name FROM information_schema.tables 
-      WHERE table_schema = 'public'
-    `));
-    console.log("📋 Existing tables:", tables);
-    
-    // Drop and recreate users table with correct schema
-    console.log("🗑️ Dropping users table...");
-    await db.execute(sql.raw('DROP TABLE IF EXISTS users CASCADE'));
-    
-    console.log("🔧 Creating users table with correct schema...");
-    await db.execute(sql.raw(`
-      CREATE TABLE users (
-          id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
-          email VARCHAR(255) NOT NULL UNIQUE,
-          name VARCHAR(255) NOT NULL,
-          profile_image_url TEXT,
-          bio TEXT,
-          created_at TIMESTAMP DEFAULT NOW(),
-          updated_at TIMESTAMP DEFAULT NOW()
-      )
-    `));
-    
-    // Verify the table was created correctly
-    console.log("🔍 Verifying table schema...");
-    const schema = await db.execute(sql.raw(`
-      SELECT column_name, data_type 
+    // Check current table structure
+    console.log("📋 Checking current table structure...");
+    const columns = await db.execute(sql.raw(`
+      SELECT column_name, data_type, is_nullable 
       FROM information_schema.columns 
-      WHERE table_name = 'users'
+      WHERE table_name = 'users' AND table_schema = 'public'
+      ORDER BY ordinal_position
+    `));
+    console.log("Current columns:", columns);
+    
+    // Check if name column already exists
+    const hasNameColumn = columns.some(col => col.column_name === 'name');
+    
+    if (hasNameColumn) {
+      console.log("✅ Name column already exists!");
+      return res.json({ 
+        message: "Name column already exists", 
+        status: "already_fixed",
+        columns: columns
+      });
+    }
+    
+    // Add the missing name column
+    console.log("➕ Adding name column...");
+    await db.execute(sql.raw(`
+      ALTER TABLE users 
+      ADD COLUMN name VARCHAR(255) NOT NULL DEFAULT 'User'
     `));
     
-    console.log("✅ Users table created successfully with schema:", schema);
+    // Verify the column was added
+    const updatedColumns = await db.execute(sql.raw(`
+      SELECT column_name, data_type, is_nullable 
+      FROM information_schema.columns 
+      WHERE table_name = 'users' AND table_schema = 'public'
+      ORDER BY ordinal_position
+    `));
+    
+    console.log("✅ Name column added successfully!");
     res.json({ 
-      message: "Database fix completed successfully", 
-      status: "success",
-      schema: schema,
-      timestamp: new Date().toISOString()
+      message: "Name column added successfully", 
+      status: "fixed",
+      before: columns,
+      after: updatedColumns
     });
+    
   } catch (error) {
-    console.error("❌ Database fix failed:", error);
+    console.error("❌ Failed to add name column:", error);
     res.status(500).json({ 
-      message: "Database fix failed", 
+      message: "Failed to add name column", 
       error: error.message,
       stack: error.stack
     });

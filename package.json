@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx index.ts",
     "build": "tsc && npm run db:push",
-    "start": "node dist/index.js",
+    "start": "npm run db:push && node dist/index.js",
     "start:dev": "NODE_ENV=production tsx index.ts",
     "check": "tsc --noEmit",
     "db:setup": "drizzle-kit push --force --verbose",
