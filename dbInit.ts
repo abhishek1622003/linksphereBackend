@@ -4,6 +4,7 @@ import { users, posts, likes, comments, follows, sessions } from "./schema";
 
 export async function initializeDatabase() {
   try {
+    console.log("🔍 Starting database initialization...");
     console.log("🔍 Checking database connection...");
     
     if (!db) {
@@ -14,26 +15,37 @@ export async function initializeDatabase() {
     await db.execute(sql`SELECT 1`);
     console.log("✅ Database connection successful");
 
-    // Force recreation of tables to ensure correct schema
-    console.log("🔧 Force recreating all tables to ensure correct schema...");
+    // Always force recreation of tables to ensure correct schema
+    console.log("🔧 FORCE recreating all tables to ensure correct schema...");
+    console.log("⚠️ This will drop ALL existing data!");
+    
     await recreateTablesWithCorrectSchema();
     
     // Test the schema after recreation
+    console.log("🧪 Testing schema after recreation...");
     await db.execute(sql`SELECT id, email, name FROM users LIMIT 1`);
-    console.log("✅ Database initialized with correct schema");
+    console.log("✅ Database initialized with correct schema - name column exists!");
+    
+    // Log success prominently
+    console.log("🎉 DATABASE INITIALIZATION COMPLETED SUCCESSFULLY!");
     return true;
 
   } catch (error) {
-    console.error("❌ Database initialization failed:", error);
+    console.error("❌ DATABASE INITIALIZATION FAILED!");
+    console.error("❌ Error:", error);
     
     // Log more details about the error
     if (error.code) {
-      console.error(`Error code: ${error.code}`);
+      console.error(`❌ Error code: ${error.code}`);
     }
     if (error.message) {
-      console.error(`Error message: ${error.message}`);
+      console.error(`❌ Error message: ${error.message}`);
+    }
+    if (error.stack) {
+      console.error(`❌ Stack trace: ${error.stack}`);
     }
     
+    // Re-throw to make sure startup fails if DB init fails
     throw error;
   }
 }

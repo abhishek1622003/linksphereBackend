@@ -72,6 +72,23 @@ app.get("/health", async (req, res) => {
   }
 });
 
+// Debug endpoint to manually recreate database
+app.post("/debug/recreate-db", async (req, res) => {
+  try {
+    console.log("🔄 Manual database recreation requested");
+    const { initializeDatabase } = await import("./dbInit");
+    await initializeDatabase();
+    res.json({ message: "Database recreated successfully" });
+  } catch (error) {
+    console.error("❌ Manual database recreation failed:", error);
+    res.status(500).json({ 
+      message: "Database recreation failed", 
+      error: error.message,
+      code: error.code 
+    });
+  }
+});
+
 // Register API routes
 registerRoutes(app);
 
@@ -94,21 +111,32 @@ const port = parseInt(process.env.PORT || '5000', 10);
 
 async function startServer() {
   try {
-    // Initialize database first
+    console.log("🚀 Starting LinkSphere server...");
+    
+    // Initialize database first - REQUIRED for proper operation
+    console.log("📊 Initializing database...");
     const { initializeDatabase } = await import("./dbInit");
     await initializeDatabase();
+    console.log("🎉 Database initialization completed!");
     
     app.listen(port, () => {
       console.log(`✅ Server running on port ${port}`);
       console.log(`🌐 Health check: http://localhost:${port}/health`);
+      console.log(`🛠️ Debug recreate DB: POST http://localhost:${port}/debug/recreate-db`);
     });
   } catch (error) {
-    console.error("❌ Failed to start server:", error);
-    console.log("⚠️ Starting server anyway (database issues may persist)");
+    console.error("❌ CRITICAL: Failed to start server with database:", error);
+    console.error("❌ Database initialization error:", error.message);
+    console.error("❌ This is a critical error that prevents proper operation!");
+    
+    // Still start server but with warnings
+    console.log("⚠️ Starting server in degraded mode...");
     
     app.listen(port, () => {
-      console.log(`⚠️ Server running on port ${port} (with database issues)`);
+      console.log(`⚠️ Server running on port ${port} (DATABASE ISSUES PRESENT!)`);
       console.log(`🌐 Health check: http://localhost:${port}/health`);
+      console.log(`🛠️ Debug recreate DB: POST http://localhost:${port}/debug/recreate-db`);
+      console.log("❌ WARNING: Database is not properly initialized!");
     });
   }
 }
