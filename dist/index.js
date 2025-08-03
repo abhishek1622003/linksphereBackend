@@ -72,7 +72,7 @@ app.use((req, res, next) => {
 });
 // Health check endpoint
 app.get("/", (req, res) => {
-    res.json({ message: "LinkSphere API Server v6 - FORCE REBUILD", status: "running", timestamp: new Date().toISOString() });
+    res.json({ message: "LinkSphere API Server v7 - FINAL BUILD", status: "running", timestamp: new Date().toISOString() });
 });
 // REAL FIX: Add missing name column to existing users table
 app.get("/add-name-column", async (req, res) => {
