@@ -43,7 +43,39 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get("/", (req, res) => {
-  res.json({ message: "LinkSphere API Server v2", status: "running" });
+  res.json({ message: "LinkSphere API Server v3 - FORCE REBUILD", status: "running" });
+});
+
+// EMERGENCY: Create database tables endpoint
+app.get("/emergency/create-tables", async (req, res) => {
+  try {
+    console.log("🚨 EMERGENCY: Creating database tables...");
+    const { db } = await import("./db");
+    const { sql } = await import("drizzle-orm");
+    
+    // Drop and recreate users table with correct schema
+    await db.execute(sql.raw('DROP TABLE IF EXISTS users CASCADE'));
+    await db.execute(sql.raw(`
+      CREATE TABLE users (
+          id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
+          email VARCHAR(255) NOT NULL UNIQUE,
+          name VARCHAR(255) NOT NULL,
+          profile_image_url TEXT,
+          bio TEXT,
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `));
+    
+    console.log("✅ Users table created successfully");
+    res.json({ message: "Emergency table creation completed", status: "success" });
+  } catch (error) {
+    console.error("❌ Emergency table creation failed:", error);
+    res.status(500).json({ 
+      message: "Emergency table creation failed", 
+      error: error.message 
+    });
+  }
 });
 
 // Health check endpoint for Render
@@ -113,30 +145,22 @@ async function startServer() {
   try {
     console.log("🚀 Starting LinkSphere server...");
     
-    // Initialize database first - REQUIRED for proper operation
-    console.log("📊 Initializing database...");
-    const { initializeDatabase } = await import("./dbInit");
-    await initializeDatabase();
-    console.log("🎉 Database initialization completed!");
+    // TEMPORARILY DISABLED: Database initialization during startup
+    // We'll use the emergency endpoint instead
+    console.log("⚠️ Database initialization DISABLED during startup");
+    console.log("📝 Use GET /emergency/create-tables to create database tables");
     
     app.listen(port, () => {
       console.log(`✅ Server running on port ${port}`);
       console.log(`🌐 Health check: http://localhost:${port}/health`);
-      console.log(`🛠️ Debug recreate DB: POST http://localhost:${port}/debug/recreate-db`);
+      console.log(`� Emergency tables: GET http://localhost:${port}/emergency/create-tables`);
     });
   } catch (error) {
-    console.error("❌ CRITICAL: Failed to start server with database:", error);
-    console.error("❌ Database initialization error:", error.message);
-    console.error("❌ This is a critical error that prevents proper operation!");
-    
-    // Still start server but with warnings
-    console.log("⚠️ Starting server in degraded mode...");
+    console.error("❌ CRITICAL: Failed to start server:", error);
     
     app.listen(port, () => {
-      console.log(`⚠️ Server running on port ${port} (DATABASE ISSUES PRESENT!)`);
+      console.log(`⚠️ Server running on port ${port} (ERROR STATE)`);
       console.log(`🌐 Health check: http://localhost:${port}/health`);
-      console.log(`🛠️ Debug recreate DB: POST http://localhost:${port}/debug/recreate-db`);
-      console.log("❌ WARNING: Database is not properly initialized!");
     });
   }
 }
