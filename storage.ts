@@ -55,11 +55,20 @@ export interface IStorage {
 // Implementation
 class Storage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
+    if (!db) {
+      throw new Error("Database connection not initialized");
+    }
+    console.log("🔍 Storage.getUser - querying for user:", id);
     const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    console.log("🔍 Storage.getUser - query result:", result.length > 0 ? "found" : "not found");
     return result[0];
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    if (!db) {
+      throw new Error("Database connection not initialized");
+    }
+    console.log("🔍 Storage.upsertUser - starting with data:", userData);
     const existingUser = await this.getUser(userData.id);
     
     if (existingUser) {

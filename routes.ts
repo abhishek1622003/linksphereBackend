@@ -10,9 +10,20 @@ export function registerRoutes(app: Express): void {
   // Auth routes
   app.get('/api/auth/user', verifyFirebaseToken, async (req: any, res) => {
     try {
+      console.log("🔍 /api/auth/user - Firebase user:", req.user);
       const userId = req.user.uid;
+      console.log("🔍 Looking up user in database:", userId);
+      
       let user = await storage.getUser(userId);
+      console.log("🔍 Database query result:", user ? "User found" : "User not found");
+      
       if (!user) {
+        console.log("🔍 Creating new user with data:", {
+          id: userId,
+          email: req.user.email,
+          name: req.user.name || req.user.displayName || "",
+          profileImageUrl: req.user.picture || ""
+        });
         // Upsert user in database if not found
         user = await storage.upsertUser({
           id: userId,
@@ -20,11 +31,13 @@ export function registerRoutes(app: Express): void {
           name: req.user.name || req.user.displayName || "",
           profileImageUrl: req.user.picture || ""
         });
+        console.log("✅ User created successfully:", user);
       }
       res.json(user);
     } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      console.error("❌ Error in /api/auth/user:", error);
+      console.error("❌ Error stack:", error.stack);
+      res.status(500).json({ message: "Failed to fetch user", error: error.message });
     }
   });
 
