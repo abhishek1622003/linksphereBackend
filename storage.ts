@@ -108,6 +108,10 @@ class Storage implements IStorage {
   }
 
   async updateUserProfile(id: string, profile: UpdateUserProfile): Promise<User> {
+    console.log("🔍 Storage.updateUserProfile called with:");
+    console.log("🔍 ID:", id);
+    console.log("🔍 Profile data:", JSON.stringify(profile, null, 2));
+    
     const result = await db
       .update(users)
       .set({
@@ -117,10 +121,13 @@ class Storage implements IStorage {
       .where(eq(users.id, id))
       .returning();
     
+    console.log("🔍 Database update result:", JSON.stringify(result, null, 2));
+    
     if (!result[0]) {
       throw new Error("User not found");
     }
     
+    console.log("✅ Storage.updateUserProfile returning:", JSON.stringify(result[0], null, 2));
     return result[0];
   }
 

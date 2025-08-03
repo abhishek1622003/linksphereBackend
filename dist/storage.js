@@ -55,6 +55,9 @@ class Storage {
         }
     }
     async updateUserProfile(id, profile) {
+        console.log("🔍 Storage.updateUserProfile called with:");
+        console.log("🔍 ID:", id);
+        console.log("🔍 Profile data:", JSON.stringify(profile, null, 2));
         const result = await db_1.db
             .update(schema_1.users)
             .set({
@@ -63,9 +66,11 @@ class Storage {
         })
             .where((0, drizzle_orm_1.eq)(schema_1.users.id, id))
             .returning();
+        console.log("🔍 Database update result:", JSON.stringify(result, null, 2));
         if (!result[0]) {
             throw new Error("User not found");
         }
+        console.log("✅ Storage.updateUserProfile returning:", JSON.stringify(result[0], null, 2));
         return result[0];
     }
     async createPost(userId, post) {

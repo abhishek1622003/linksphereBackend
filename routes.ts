@@ -51,29 +51,33 @@ export function registerRoutes(app: Express): void {
   app.put('/api/profile', verifyFirebaseToken, async (req: any, res): Promise<void> => {
     try {
       console.log("🔍 PUT /api/profile - Request received");
-      console.log("🔍 Request body:", req.body);
+      console.log("🔍 Request body:", JSON.stringify(req.body, null, 2));
       console.log("🔍 User ID:", req.user.uid);
       
       const userId = req.user.uid;
       const validation = updateUserProfileSchema.safeParse(req.body);
       
       if (!validation.success) {
-        console.log("❌ Profile validation failed:", validation.error);
+        console.log("❌ Profile validation failed:", validation.error.issues);
         const validationError = fromError(validation.error);
         res.status(400).json({ 
           message: "Validation failed", 
-          details: validationError.toString() 
+          details: validationError.toString(),
+          issues: validation.error.issues
         });
         return;
       }
 
-      console.log("✅ Profile validation successful:", validation.data);
+      console.log("✅ Profile validation successful:", JSON.stringify(validation.data, null, 2));
+      console.log("🔍 About to call storage.updateUserProfile with:", { userId, data: validation.data });
+      
       const updatedUser = await storage.updateUserProfile(userId, validation.data);
-      console.log("✅ Profile updated successfully:", updatedUser);
+      console.log("✅ Profile updated successfully:", JSON.stringify(updatedUser, null, 2));
       res.json(updatedUser);
     } catch (error) {
       console.error("❌ Error updating profile:", error);
-      res.status(500).json({ message: "Failed to update profile" });
+      console.error("❌ Error stack:", error.stack);
+      res.status(500).json({ message: "Failed to update profile", error: error.message });
     }
   });
 
