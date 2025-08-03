@@ -14,33 +14,26 @@ export async function initializeDatabase() {
     await db.execute(sql`SELECT 1`);
     console.log("✅ Database connection successful");
 
-    // Check if users table exists and has correct schema
-    try {
-      // Try to query with name column specifically
-      await db.execute(sql`SELECT id, email, name FROM users LIMIT 1`);
-      console.log("✅ Users table exists with correct schema");
-      return true;
-    } catch (error) {
-      console.warn("⚠️ Users table issue:", error.message);
-      
-      // Check if table exists but has wrong schema
-      try {
-        await db.execute(sql`SELECT * FROM users LIMIT 1`);
-        console.log("📝 Users table exists but may have wrong schema - recreating...");
-        await recreateTablesWithCorrectSchema();
-      } catch (tableError) {
-        console.log("📝 Users table does not exist - creating all tables...");
-        await createTablesManually();
-      }
-      
-      // Test again
-      await db.execute(sql`SELECT id, email, name FROM users LIMIT 1`);
-      console.log("✅ Users table created with correct schema");
-      return true;
-    }
+    // Force recreation of tables to ensure correct schema
+    console.log("🔧 Force recreating all tables to ensure correct schema...");
+    await recreateTablesWithCorrectSchema();
+    
+    // Test the schema after recreation
+    await db.execute(sql`SELECT id, email, name FROM users LIMIT 1`);
+    console.log("✅ Database initialized with correct schema");
+    return true;
 
   } catch (error) {
     console.error("❌ Database initialization failed:", error);
+    
+    // Log more details about the error
+    if (error.code) {
+      console.error(`Error code: ${error.code}`);
+    }
+    if (error.message) {
+      console.error(`Error message: ${error.message}`);
+    }
+    
     throw error;
   }
 }
@@ -49,7 +42,7 @@ async function recreateTablesWithCorrectSchema() {
   console.log("🔧 Recreating tables with correct schema...");
   
   try {
-    // Drop tables in correct order (reverse of dependencies)
+    // Drop tables in correct order (reverse of dependencies) with CASCADE to handle foreign keys
     const dropStatements = [
       'DROP TABLE IF EXISTS follows CASCADE',
       'DROP TABLE IF EXISTS comments CASCADE', 
@@ -59,14 +52,16 @@ async function recreateTablesWithCorrectSchema() {
       'DROP TABLE IF EXISTS sessions CASCADE'
     ];
 
+    console.log("🗑️ Dropping existing tables...");
     for (const statement of dropStatements) {
-      console.log("🗑️ ", statement);
+      console.log(`   ${statement}`);
       await db.execute(sql.raw(statement));
     }
 
     // Now create tables with correct schema
     await createTablesManually();
     
+    console.log("✅ Tables recreated successfully");
   } catch (error) {
     console.error("❌ Failed to recreate tables:", error);
     throw error;
@@ -78,9 +73,9 @@ async function createTablesManually() {
   
   try {
     // Create tables one by one with proper error handling
-    console.log("� Creating users table...");
+    console.log("🔧 Creating users table...");
     await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS users (
+      CREATE TABLE users (
           id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
           email VARCHAR(255) NOT NULL UNIQUE,
           name VARCHAR(255) NOT NULL,
@@ -90,10 +85,11 @@ async function createTablesManually() {
           updated_at TIMESTAMP DEFAULT NOW()
       )
     `);
+    console.log("   ✅ Users table created");
 
     console.log("🔧 Creating posts table...");
     await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS posts (
+      CREATE TABLE posts (
           id SERIAL PRIMARY KEY,
           content TEXT NOT NULL,
           author_id VARCHAR NOT NULL,
@@ -102,10 +98,11 @@ async function createTablesManually() {
           FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `);
+    console.log("   ✅ Posts table created");
 
     console.log("🔧 Creating likes table...");
     await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS likes (
+      CREATE TABLE likes (
           id SERIAL PRIMARY KEY,
           user_id VARCHAR NOT NULL,
           post_id INTEGER NOT NULL,
@@ -115,10 +112,11 @@ async function createTablesManually() {
           UNIQUE(user_id, post_id)
       )
     `);
+    console.log("   ✅ Likes table created");
 
     console.log("🔧 Creating comments table...");
     await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS comments (
+      CREATE TABLE comments (
           id SERIAL PRIMARY KEY,
           content TEXT NOT NULL,
           author_id VARCHAR NOT NULL,
@@ -129,10 +127,11 @@ async function createTablesManually() {
           FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
       )
     `);
+    console.log("   ✅ Comments table created");
 
     console.log("🔧 Creating follows table...");
     await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS follows (
+      CREATE TABLE follows (
           id SERIAL PRIMARY KEY,
           follower_id VARCHAR NOT NULL,
           following_id VARCHAR NOT NULL,
@@ -142,24 +141,28 @@ async function createTablesManually() {
           UNIQUE(follower_id, following_id)
       )
     `);
+    console.log("   ✅ Follows table created");
 
     console.log("🔧 Creating sessions table...");
     await db.execute(sql`
-      CREATE TABLE IF NOT EXISTS sessions (
+      CREATE TABLE sessions (
           sid VARCHAR PRIMARY KEY,
           sess JSONB NOT NULL,
           expire TIMESTAMP NOT NULL
       )
     `);
+    console.log("   ✅ Sessions table created");
 
     console.log("🔧 Creating session index...");
     await db.execute(sql`
-      CREATE INDEX IF NOT EXISTS IDX_session_expire ON sessions (expire)
+      CREATE INDEX IDX_session_expire ON sessions (expire)
     `);
+    console.log("   ✅ Session index created");
 
     console.log("✅ All tables created successfully");
   } catch (error) {
     console.error("❌ Failed to create tables manually:", error);
+    console.error("Error details:", error);
     throw error;
   }
 }
