@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: linksphere-server
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+    # Health check endpoint
+    healthCheckPath: /health
