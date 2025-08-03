@@ -2,10 +2,6 @@ import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import * as schema from "./schema";
 
-// Load environment variables
-import { config } from 'dotenv';
-config({ path: ['.env.local', '.env'] });
-
 // Use the default WebSocket constructor in serverless environments
 
 if (!process.env.DATABASE_URL) {
