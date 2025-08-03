@@ -43,7 +43,7 @@ app.use((req, res, next) => {
 
 // Health check endpoint
 app.get("/", (req, res) => {
-  res.json({ message: "LinkSphere API Server", status: "running" });
+  res.json({ message: "LinkSphere API Server v2", status: "running" });
 });
 
 // Health check endpoint for Render
